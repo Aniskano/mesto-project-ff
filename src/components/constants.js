@@ -1,6 +1,6 @@
 // DOM узлы
 const popupEdit = document.querySelector('.popup_type_edit'),
-  profileEditForm = document.querySelector('.popup_type_edit'),
+  profileEditForm = popupEdit.querySelector('.popup__form'),
   popupNewCard = document.querySelector('.popup_type_new-card'),
   addCardForm = popupNewCard.querySelector('.popup__form'),
   popupImageCard = document.querySelector('.popup_type_image');

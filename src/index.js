@@ -66,4 +66,4 @@ function renderCard(card) {
   container.prepend(cardToAdd);
 }
 
-initialCards.forEach(renderCard);
+initialCards.reverse().forEach(renderCard);
