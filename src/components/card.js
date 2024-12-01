@@ -1,30 +1,73 @@
 import { template } from './constants';
+import { deleteCard, likeCard, unlikeCard } from './api.js';
+
+function renderLikes(cardElement, likes) {
+  const likeButton = cardElement.querySelector('.card__like-button'),
+    likeCount = cardElement.querySelector('.card__like-count'),
+    method = hasUserLike(likes) ? 'add' : 'remove';
+
+  likeCount.textContent = likes.length;
+  likeButton.classList[method]('card__like-button_is-active');
+}
+
+const hasUserLike = (likes) =>
+  likes.some(({ _id }) => _id === globalThis.userData._id);
 
 // Функция создания карточки
-export function createCard(item, { openImage, deleteCard, likeCard }) {
-  const cardElementCopy = template.cloneNode(true),
-    cardTitle = cardElementCopy.querySelector('.card__title'),
-    cardImage = cardElementCopy.querySelector('.card__image'),
-    deleteButton = cardElementCopy.querySelector('.card__delete-button'),
-    likeButton = cardElementCopy.querySelector('.card__like-button');
+export function createCard({ data, openImage }) {
+  const cardElement = template.cloneNode(true),
+    cardTitle = cardElement.querySelector('.card__title'),
+    cardImage = cardElement.querySelector('.card__image'),
+    likeButton = cardElement.querySelector('.card__like-button');
 
-  cardImage.src = item.link;
-  cardImage.alt = item.name;
-  cardTitle.textContent = item.name;
+  cardImage.src = data.link;
+  cardImage.alt = data.name;
+  cardTitle.textContent = data.name;
 
-  deleteButton.addEventListener('click', () => deleteCard(cardElementCopy));
+  renderLikes(cardElement, data.likes);
+
+  if (globalThis.userData._id === data.owner._id) {
+    const deleteButton = cardElement.querySelector('.card__delete-button');
+    deleteButton.classList.add('card__delete-button_visible');
+    deleteButton.addEventListener('click', () =>
+      handleDeleteCard(data._id, cardElement)
+    );
+  }
+
   cardImage.addEventListener('click', () => openImage(cardImage));
-  likeButton.addEventListener('click', () => likeCard(likeButton));
+  likeButton.addEventListener('click', () => handleLikeCard(data, cardElement));
 
-  return cardElementCopy;
+  return cardElement;
 }
 
 // Функция удаления карточки
-export function deleteCard(cardElement) {
-  cardElement.remove();
+async function handleDeleteCard(id, cardElement) {
+  const confirmed = confirm('Вы действительно хотите удалить карточку?');
+
+  if (!confirmed) {
+    console.warn(`Удаление карточки с id ${id} отменено.`);
+    return;
+  }
+
+  try {
+    const { message } = await deleteCard(id);
+    cardElement.remove();
+    console.log(`%c${message}`, 'color: green');
+  } catch (error) {
+    console.error('Произошла ошибка при удалении карточки:', error);
+  }
 }
 
 // установка/удаление лайка
-export function likeCard(likeButton) {
-  likeButton.classList.toggle('card__like-button_is-active');
+async function handleLikeCard(data, cardElement) {
+  try {
+    const { likes } = hasUserLike(data.likes)
+      ? await unlikeCard(data._id)
+      : await likeCard(data._id);
+    data.likes = likes;
+    renderLikes(cardElement, likes);
+  } catch (error) {
+    const actionMessage = hasUserLike ? 'удалении лайка с' : 'лайке';
+    console.error(`Произошла ошибка при ${actionMessage} карточки:`, error);
+  }
 }
